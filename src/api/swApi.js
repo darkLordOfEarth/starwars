@@ -1,10 +1,8 @@
 import axios from 'axios';
 
-const API_URL = '/api';
-
-export const getData = async (endpoint) => {
+export const getData = async (url) => {
   try {
-    const response = await axios.get(`${API_URL}/${endpoint}`);
+    const response = await axios.get(`/api/proxy?url=${encodeURIComponent(url)}`);
     return response.data;
   } catch (error) {
     console.error('Ошибка при получении данных:', error);
