@@ -44,67 +44,48 @@ const handleSelectChange = async (e) => {
     const character = await getData(url);
     setSelectedCharacter(character);
 
-    // 🔹 Загрузка фильмов по ID
     const films = await Promise.all(
-      (character.films || []).map((filmId) =>
-        getData(`https://sw-api.starnavi.io/films/${filmId}/`)
-      )
+      (character.films || []).map((id) => getData(`films/${id}/`))
     );
 
-    // 🔹 Загрузка кораблей по ID
     const starships = await Promise.all(
-      (character.starships || []).map((shipId) =>
-        getData(`https://sw-api.starnavi.io/starships/${shipId}/`)
-      )
+      (character.starships || []).map((id) => getData(`starships/${id}/`))
     );
 
-    // 📍 Базовый узел героя
     const baseNode = [
-      {
-        id: 'hero',
-        type: 'input',
-        data: { label: `🧑 ${character.name}` },
-        position: { x: 400, y: 0 },
-      },
+      { id: 'hero', type: 'input', data: { label: `🧑 ${character.name}` }, position: { x: 400, y: 0 } }
     ];
 
-    // 📍 Узлы фильмов
-    const filmNodes = films.map((film, i) => ({
-      id: `film-${film.episode_id || film.id || i}`,
-      data: { label: `🎬 ${film.title}` },
-      position: { x: 100 + i * 250, y: 200 },
+    const filmNodes = films.map((f, i) => ({
+      id: `film-${f.episode_id || i}`,
+      data: { label: `🎬 ${f.title}` },
+      position: { x: 100 + i * 250, y: 200 }
     }));
 
-    // 📍 Узлы кораблей
-    const shipNodes = starships.map((ship, i) => ({
-      id: `ship-${ship.id || i}`,
-      data: { label: `🚀 ${ship.name}` },
-      position: { x: 100 + (i % 5) * 250, y: 400 + Math.floor(i / 5) * 120 },
+    const shipNodes = starships.map((s, i) => ({
+      id: `ship-${s.id || i}`,
+      data: { label: `🚀 ${s.name}` },
+      position: { x: 100 + (i % 5) * 250, y: 400 + Math.floor(i / 5) * 120 }
     }));
 
-    // 🕸 Связи: герой → фильм
-    const filmEdges = films.map((film) => ({
-      id: `edge-hero-film-${film.episode_id || film.id}`,
+    const filmEdges = films.map((f) => ({
+      id: `edge-hero-film-${f.episode_id}`,
       source: 'hero',
-      target: `film-${film.episode_id || film.id}`,
-      label: 'участвует в фильме',
+      target: `film-${f.episode_id}`,
+      label: 'участвует в фильме'
     }));
 
-    // 🕸 Связи: фильм → корабль
     const shipEdges = [];
-    if (starships.length > 0) {
-      films.forEach((film, i) => {
-        const filmId = film.episode_id || film.id || i;
-        starships.forEach((ship, j) => {
-          shipEdges.push({
-            id: `edge-film-${filmId}-ship-${ship.id || j}`,
-            source: `film-${filmId}`,
-            target: `ship-${ship.id || j}`,
-            label: 'подорожував на кораблі',
-          });
+    films.forEach((f, i) => {
+      starships.forEach((s, j) => {
+        shipEdges.push({
+          id: `edge-film-${f.episode_id}-ship-${s.id || j}`,
+          source: `film-${f.episode_id}`,
+          target: `ship-${s.id || j}`,
+          label: 'подорожував на кораблі'
         });
       });
-    }
+    });
 
     setNodes([...baseNode, ...filmNodes, ...shipNodes]);
     setEdges([...filmEdges, ...shipEdges]);
@@ -112,6 +93,7 @@ const handleSelectChange = async (e) => {
     console.error('Ошибка загрузки персонажа:', err);
   }
 };
+
 
 
   // 📍 Пагинация
