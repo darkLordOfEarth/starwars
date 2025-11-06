@@ -46,7 +46,7 @@ useEffect(() => {
     // 🔹 Загрузка фильмов
     const filmRequests = await Promise.all(
       (character.films || []).map((filmId) =>
-        axios.get(`https://sw-api.starnavi.io/films/${filmId}/`)
+        axios.get(`/api/proxy?url=https://sw-api.starnavi.io/films/${filmId}/`)
       )
     );
     const films = filmRequests.map((r) => r.data);
@@ -54,7 +54,8 @@ useEffect(() => {
     // 🔹 Загрузка кораблей
     const shipRequests = await Promise.all(
       (character.starships || []).map((shipId) =>
-        axios.get(`https://sw-api.starnavi.io/starships/${shipId}/`)
+        axios.get(`/api/proxy?url=https://sw-api.starnavi.io/starships/${shipId}/`)
+
       )
     );
     const starships = shipRequests.map((r) => r.data);
