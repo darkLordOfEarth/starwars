@@ -43,22 +43,23 @@ useEffect(() => {
     const character = res.data;
     setSelectedCharacter(character);
 
-    // 🔹 Загрузка фильмов
-    const filmRequests = await Promise.all(
-      (character.films || []).map((filmId) =>
-        axios.get(`/api/proxy?url=https://sw-api.starnavi.io/films/${filmId}/`)
-      )
-    );
-    const films = filmRequests.map((r) => r.data);
+    // 🔹 Загрузка фильмов через прокси
+const filmRequests = await Promise.all(
+  (character.films || []).map((filmUrl) =>
+    axios.get(`/api/proxy?url=${encodeURIComponent(filmUrl)}`)
+  )
+);
+const films = filmRequests.map((r) => r.data);
 
-    // 🔹 Загрузка кораблей
-    const shipRequests = await Promise.all(
-      (character.starships || []).map((shipId) =>
-        axios.get(`/api/proxy?url=https://sw-api.starnavi.io/starships/${shipId}/`)
 
-      )
-    );
-    const starships = shipRequests.map((r) => r.data);
+    // 🔹 Загрузка кораблей через прокси
+const shipRequests = await Promise.all(
+  (character.starships || []).map((shipUrl) =>
+    axios.get(`/api/proxy?url=${encodeURIComponent(shipUrl)}`)
+  )
+);
+const starships = shipRequests.map((r) => r.data);
+
 
     // остальной код без изменений...
 
