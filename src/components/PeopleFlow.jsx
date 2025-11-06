@@ -1,12 +1,13 @@
+// PeopleFlow.jsx
 import React, { useEffect, useState } from "react";
 import ReactFlow, { MiniMap, Controls, Background } from "reactflow";
 import "reactflow/dist/style.css";
-import fallbackImage from "../assets/images/logo.png";
-import { getData } from "../api/swApi";
 import axios from "axios";
+import fallbackImage from "../assets/images/logo.png";
 
 export default function PeopleFlow() {
   const START_URL = "https://sw-api.starnavi.io/people/";
+
   const [characters, setCharacters] = useState([]);
   const [nextPage, setNextPage] = useState(null);
   const [prevPage, setPrevPage] = useState(null);
@@ -19,9 +20,9 @@ export default function PeopleFlow() {
     setLoading(true);
     try {
       const res = await axios.get(`/api/proxy?url=${encodeURIComponent(url)}`);
-      setCharacters(res.data.results);
-      setNextPage(res.data.next);
-      setPrevPage(res.data.previous);
+      setCharacters(res.data.results || []);
+      setNextPage(res.data.next || null);
+      setPrevPage(res.data.previous || null);
     } catch (err) {
       console.error("Ошибка загрузки персонажей:", err);
     } finally {
@@ -37,63 +38,80 @@ export default function PeopleFlow() {
     const url = e.target.value;
     if (!url) return;
 
-    setLoading(true);
-
     try {
-      // Получаем выбранного персонажа
-      const character = await getData(`proxy?url=${encodeURIComponent(url)}`);
+      // Загружаем персонажа
+      const character = await axios
+        .get(`/api/proxy?url=${encodeURIComponent(url)}`)
+        .then((res) => res.data);
+
       setSelectedCharacter(character);
 
       // Загружаем фильмы
       const films = await Promise.all(
         (character.films || []).map((id) =>
-          getData(
-            `proxy?url=${encodeURIComponent(`https://sw-api.starnavi.io/films/${id}/`)}`
-          )
+          axios
+            .get(
+              `/api/proxy?url=${encodeURIComponent(
+                `https://sw-api.starnavi.io/films/${id}/`
+              )}`
+            )
+            .then((res) => res.data)
         )
       );
 
       // Загружаем корабли
       const starships = await Promise.all(
         (character.starships || []).map((id) =>
-          getData(
-            `proxy?url=${encodeURIComponent(`https://sw-api.starnavi.io/starships/${id}/`)}`
-          )
+          axios
+            .get(
+              `/api/proxy?url=${encodeURIComponent(
+                `https://sw-api.starnavi.io/starships/${id}/`
+              )}`
+            )
+            .then((res) => res.data)
         )
       );
 
-      // Узлы
+      // Базовый узел персонажа
       const baseNode = [
-        { id: "hero", type: "input", data: { label: `🧑 ${character.name}` }, position: { x: 400, y: 0 } },
+        {
+          id: "hero",
+          type: "input",
+          data: { label: `🧑 ${character.name}` },
+          position: { x: 400, y: 0 },
+        },
       ];
 
-      const filmNodes = films.map((f, i) => ({
-        id: `film-${f.episode_id}`,
+      // Узлы фильмов
+      const filmNodes = (films || []).map((f, i) => ({
+        id: `film-${f.episode_id || i}`,
         data: { label: `🎬 ${f.title}` },
         position: { x: 100 + i * 250, y: 200 },
       }));
 
-      const shipNodes = starships.map((s, i) => ({
-        id: `ship-${s.url.split("/").slice(-2, -1)[0]}`,
+      // Узлы кораблей
+      const shipNodes = (starships || []).map((s, i) => ({
+        id: `ship-${s.id || i}`,
         data: { label: `🚀 ${s.name}` },
         position: { x: 100 + (i % 5) * 250, y: 400 + Math.floor(i / 5) * 120 },
       }));
 
-      // Связи
-      const filmEdges = films.map((f) => ({
+      // Связи герой → фильмы
+      const filmEdges = (films || []).map((f) => ({
         id: `edge-hero-film-${f.episode_id}`,
         source: "hero",
         target: `film-${f.episode_id}`,
         label: "участвует в фильме",
       }));
 
+      // Связи фильмы → корабли
       const shipEdges = [];
-      films.forEach((f) => {
-        starships.forEach((s) => {
+      (films || []).forEach((f, i) => {
+        (starships || []).forEach((s, j) => {
           shipEdges.push({
-            id: `edge-film-${f.episode_id}-ship-${s.url.split("/").slice(-2, -1)[0]}`,
+            id: `edge-film-${f.episode_id}-ship-${s.id || j}`,
             source: `film-${f.episode_id}`,
-            target: `ship-${s.url.split("/").slice(-2, -1)[0]}`,
+            target: `ship-${s.id || j}`,
             label: "подорожував на кораблі",
           });
         });
@@ -103,8 +121,6 @@ export default function PeopleFlow() {
       setEdges([...filmEdges, ...shipEdges]);
     } catch (err) {
       console.error("Ошибка загрузки персонажа:", err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -115,15 +131,21 @@ export default function PeopleFlow() {
     <div style={{ width: "100%", textAlign: "center" }}>
       <h2>🌌 Персонажі Star Wars</h2>
 
+      {/* Пагинация */}
       <div style={{ marginBottom: "10px" }}>
         <button onClick={handlePrev} disabled={!prevPage || loading}>
           ⬅ Попередня
         </button>
-        <button onClick={handleNext} disabled={!nextPage || loading} style={{ marginLeft: "10px" }}>
+        <button
+          onClick={handleNext}
+          disabled={!nextPage || loading}
+          style={{ marginLeft: "10px" }}
+        >
           Наступна ➡
         </button>
       </div>
 
+      {/* Список персонажей */}
       <div
         style={{
           maxHeight: "300px",
@@ -134,9 +156,18 @@ export default function PeopleFlow() {
           marginBottom: "20px",
         }}
       >
-        <select onChange={handleSelectChange} size="10" style={{ width: "100%", padding: "8px", borderRadius: "8px", border: "1px solid #ccc" }}>
+        <select
+          onChange={handleSelectChange}
+          size="10"
+          style={{
+            width: "100%",
+            padding: "8px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+          }}
+        >
           <option value="">Оберіть персонажа</option>
-          {characters.map((char) => (
+          {(characters || []).map((char) => (
             <option key={char.url} value={char.url}>
               {char.name}
             </option>
@@ -145,6 +176,7 @@ export default function PeopleFlow() {
         {loading && <p style={{ color: "#888" }}>Завантаження...</p>}
       </div>
 
+      {/* Деталі персонажа */}
       {selectedCharacter && (
         <>
           <div
@@ -162,15 +194,28 @@ export default function PeopleFlow() {
             <img
               src={fallbackImage}
               alt={selectedCharacter.name}
-              style={{ width: "180px", height: "auto", borderRadius: "10px", marginBottom: "10px" }}
+              style={{
+                width: "180px",
+                height: "auto",
+                borderRadius: "10px",
+                marginBottom: "10px",
+              }}
             />
             <p>Стать: {selectedCharacter.gender || "невідомо"}</p>
             <p>Зріст: {selectedCharacter.height || "?"} см</p>
             <p>Вага: {selectedCharacter.mass || "?"} кг</p>
           </div>
 
-          <div style={{ width: "100%", height: "600px", border: "1px solid #444", borderRadius: "10px" }}>
-            <ReactFlow nodes={nodes} edges={edges}>
+          {/* Діаграма */}
+          <div
+            style={{
+              width: "100%",
+              height: "600px",
+              border: "1px solid #444",
+              borderRadius: "10px",
+            }}
+          >
+            <ReactFlow nodes={nodes || []} edges={edges || []}>
               <MiniMap />
               <Controls />
               <Background />
