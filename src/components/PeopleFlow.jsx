@@ -132,9 +132,10 @@ export default function PeopleFlow() {
       >
         <option value="">Выберите персонажа</option>
         {characters.map((char) => (
-          <option key={char.url} value={char.url}>
-            {char.name}
-          </option>
+          <option key={char.url} value={`https://sw-api.starnavi.io/people/${char.id || char.url.replace(/\D/g, '')}/`}>
+  {char.name}
+</option>
+
         ))}
       </select>
 
