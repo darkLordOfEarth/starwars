@@ -35,31 +35,32 @@ useEffect(() => {
 
   // 📊 При выборе персонажа
   const handleSelectChange = async (e) => {
-    const url = e.target.value;
-    if (!url) return;
+  const url = e.target.value;
+  if (!url) return;
 
-    try {
-      const res = await axios.get(url);
-      const character = res.data;
-      setSelectedCharacter(character);
+  try {
+    const res = await axios.get(url);
+    const character = res.data;
+    setSelectedCharacter(character);
 
-      // 🔹 Загрузка фильмов
-      const filmRequests = await Promise.all(
-        (character.films || []).map((filmId) =>
-          axios.get(`/api/films/${filmId}/`)
+    // 🔹 Загрузка фильмов
+    const filmRequests = await Promise.all(
+      (character.films || []).map((filmId) =>
+        axios.get(`https://sw-api.starnavi.io/films/${filmId}/`)
+      )
+    );
+    const films = filmRequests.map((r) => r.data);
 
-        )
-      );
-      const films = filmRequests.map((r) => r.data);
+    // 🔹 Загрузка кораблей
+    const shipRequests = await Promise.all(
+      (character.starships || []).map((shipId) =>
+        axios.get(`https://sw-api.starnavi.io/starships/${shipId}/`)
+      )
+    );
+    const starships = shipRequests.map((r) => r.data);
 
-      // 🔹 Загрузка кораблей
-      const shipRequests = await Promise.all(
-        (character.starships || []).map((shipId) =>
-          axios.get(`/api/starships/${shipId}/`)
+    // остальной код без изменений...
 
-        )
-      );
-      const starships = shipRequests.map((r) => r.data);
 
       // 📍 Базовый узел героя
       const baseNode = [
