@@ -1,18 +1,19 @@
-import axios from 'axios';
+// swApi.js
+import axios from "axios";
 
-const API_URL = '/api/proxy';
+const PROXY_URL = "/api/proxy";
 
 export const getData = async (endpointOrUrl) => {
   try {
-    // Если это полный URL (начинается с http), передаем напрямую в proxy
-    const url = endpointOrUrl.startsWith('http')
-      ? `${API_URL}?url=${encodeURIComponent(endpointOrUrl)}`
-      : `${API_URL}?url=${encodeURIComponent(`https://sw-api.starnavi.io/${endpointOrUrl}`)}`;
+    // Если это полный URL, передаем его напрямую в proxy
+    const url = endpointOrUrl.startsWith("http")
+      ? `${PROXY_URL}?url=${encodeURIComponent(endpointOrUrl)}`
+      : `${PROXY_URL}?url=${encodeURIComponent(`https://sw-api.starnavi.io/${endpointOrUrl}`)}`;
 
-    const response = await axios.get(url);
-    return response.data;
-  } catch (error) {
-    console.error('Ошибка при получении данных:', error);
-    throw error;
+    const res = await axios.get(url);
+    return res.data;
+  } catch (err) {
+    console.error("Ошибка при получении данных:", err);
+    throw err;
   }
 };

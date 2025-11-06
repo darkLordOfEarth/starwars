@@ -76,7 +76,7 @@ const handleSelectChange = async (e) => {
     }));
 
     const shipEdges = [];
-    films.forEach((f, i) => {
+    films.forEach((f) => {
       starships.forEach((s, j) => {
         shipEdges.push({
           id: `edge-film-${f.episode_id}-ship-${s.id || j}`,
