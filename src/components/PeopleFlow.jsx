@@ -43,21 +43,22 @@ useEffect(() => {
     const character = res.data;
     setSelectedCharacter(character);
 
-    // 🔹 Загрузка фильмов через прокси
+    // 🔹 Загрузка фильмов
 const filmRequests = await Promise.all(
-  (character.films || []).map((filmId) =>
-    axios.get(`/api/proxy?url=${encodeURIComponent(`https://sw-api.starnavi.io/films/${filmId}/`)}`)
+  (character.films || []).map((filmUrl) =>
+    axios.get(`/api/proxy?url=${encodeURIComponent(filmUrl)}`)
   )
 );
 const films = filmRequests.map((r) => r.data);
 
-// 🔹 Загрузка кораблей через прокси
+// 🔹 Загрузка кораблей
 const shipRequests = await Promise.all(
-  (character.starships || []).map((shipId) =>
-    axios.get(`/api/proxy?url=${encodeURIComponent(`https://sw-api.starnavi.io/starships/${shipId}/`)}`)
+  (character.starships || []).map((shipUrl) =>
+    axios.get(`/api/proxy?url=${encodeURIComponent(shipUrl)}`)
   )
 );
 const starships = shipRequests.map((r) => r.data);
+
 
 
 
